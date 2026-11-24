@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generator Jadwal Kerja Shift (Roster)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 12mm;
+      }
+      body {
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .month-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        margin-bottom: 1.5rem !important;
+      }
+      .calendar-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+      }
+      .day-cell {
+        min-height: 64px !important;
+        padding: 6px !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 no-print sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">RosterShift</h1>
+          <p class="text-xs text-slate-500 hidden sm:block">Generator Jadwal Kerja Otomatis</p>
+        </div>
+      </div>
+      <button id="btnPrintTop" onclick="window.print()" class="hidden items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition shadow-sm cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        Cetak / Simpan PDF
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 print-container">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      
+      <!-- Panel Input -->
+      <aside class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 no-print lg:sticky lg:top-24">
+        <div class="mb-5">
+          <h2 class="text-lg font-bold text-slate-900">Konfigurasi Jadwal</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Atur tanggal mulai dan siklus pola shift kerja Anda.</p>
+        </div>
+
+        <form id="rosterForm" class="space-y-4" novalidate>
+          <!-- Nama Karyawan -->
+          <div>
+            <label for="employeeName" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Nama Karyawan / Tim <span class="text-slate-400 font-normal">(Opsional)</span>
+            </label>
+            <input
+              type="text"
+              id="employeeName"
+              placeholder="Contoh: Budi Santoso - Regu A"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <!-- Tanggal Mulai -->
+          <div>
+            <label for="startDate" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Tanggal Mulai <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              required
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <!-- Pola Shift -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="shiftPattern" class="block text-sm font-semibold text-slate-700">
+                Pola Shift <span class="text-rose-500">*</span>
+              </label>
+              <button type="button" id="btnUsePreset" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+                Isi Contoh Pola
+              </button>
+            </div>
+            <textarea
+              id="shiftPattern"
+              rows="3"
+              required
+              placeholder="Pagi, Pagi, Siang, Siang, Malam, Malam, Libur, Libur"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
+            ></textarea>
+            <p class="text-[11px] text-slate-500 mt-1">Pisahkan setiap hari dengan tanda koma (,). Pola akan berulang otomatis.</p>
+          </div>
+
+          <!-- Durasi Generate -->
+          <div>
+            <label for="duration" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              Durasi Generate
+            </label>
+            <select
+              id="duration"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            >
+              <option value="1">1 Bulan</option>
+              <option value="3">3 Bulan</option>
+              <option value="6">6 Bulan</option>
+              <option value="12">1 Tahun (12 Bulan)</option>
+            </select>
+          </div>
+
+          <!-- Error Message -->
+          <div id="errorBox" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium"></div>
+
+          <!-- Buttons -->
+          <div class="pt-2 space-y-2.5">
+            <button
+              type="submit"
+              class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm shadow-indigo-600/20 transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Generate Jadwal
+            </button>
+
+            <button
+              type="button"
+              id="btnPrintSide"
+              onclick="window.print()"
+              class="hidden w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Cetak / Simpan PDF
+            </button>
+          </div>
+        </form>
+
+        <!-- Legenda Warna -->
+        <div class="mt-6 pt-5 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Panduan Warna Otomatis</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-100 text-blue-800">Pagi</span>
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-orange-100 text-orange-800">Siang / Sore</span>
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-800">Malam</span>
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-800">Libur / Off</span>
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">Lainnya</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Panel Output -->
+      <section class="lg:col-span-8 print-container">
+        <!-- Empty State -->
+        <div id="emptyState" class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center no-print">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-slate-900">Belum Ada Jadwal Dibuat</h3>
+          <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            Pilih tanggal mulai, masukkan pola shift kerja Anda pada panel sebelah kiri, lalu klik tombol <strong>Generate Jadwal</strong>.
+          </p>
+        </div>
+
+        <!-- Output Container -->
+        <div id="outputWrapper" class="hidden space-y-6">
+          <!-- Output Header -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 mb-1.5">
+                Jadwal Kerja Shift
+              </span>
+              <h2 id="outputTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900">
+                Jadwal Roster Kerja
+              </h2>
+              <p id="outputSubtitle" class="text-xs sm:text-sm text-slate-500 mt-1"></p>
+            </div>
+            <div id="summaryStats" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Calendars Container -->
+          <div id="calendarsContainer" class="space-y-6"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'roster_shift_generator_v1';
+
+    const form = document.getElementById('rosterForm');
+    const employeeNameInput = document.getElementById('employeeName');
+    const startDateInput = document.getElementById('startDate');
+    const shiftPatternInput = document.getElementById('shiftPattern');
+    const durationSelect = document.getElementById('duration');
+    const errorBox = document.getElementById('errorBox');
+    const emptyState = document.getElementById('emptyState');
+    const outputWrapper = document.getElementById('outputWrapper');
+    const outputTitle = document.getElementById('outputTitle');
+    const outputSubtitle = document.getElementById('outputSubtitle');
+    const summaryStats = document.getElementById('summaryStats');
+    const calendarsContainer = document.getElementById('calendarsContainer');
+    const btnPrintTop = document.getElementById('btnPrintTop');
+    const btnPrintSide = document.getElementById('btnPrintSide');
+    const btnUsePreset = document.getElementById('btnUsePreset');
+
+    // Formatter Bahasa Indonesia
+    const fullDateFormatter = new Intl.DateTimeFormat('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const shortDayFormatter = new Intl.DateTimeFormat('id-ID', {
+      weekday: 'short',
+    });
+
+    const monthYearFormatter = new Intl.DateTimeFormat('id-ID', {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const DAY_HEADERS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+    // Pewarnaan Otomatis Badge Shift
+    function getShiftBadgeClass(shiftText) {
+      const normalized = shiftText.trim().toLowerCase();
+      if (normalized.includes('pagi')) {
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      }
+      if (normalized.includes('siang') || normalized.includes('sore')) {
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      }
+      if (normalized.includes('malam')) {
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      }
+      if (normalized.includes('libur') || normalized.includes('off') || normalized.includes('cuti')) {
+        return 'bg-green-100 text-green-800 border-green-200';
+      }
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+
+    // Parse tanggal YYYY-MM-DD secara lokal agar aman dari pergeseran timezone
+    function parseLocalDate(dateString) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    // Simpan & Muat localStorage
+    function saveToLocalStorage() {
+      const data = {
+        employeeName: employeeNameInput.value,
+        startDate: startDateInput.value,
+        shiftPattern: shiftPatternInput.value,
+        duration: durationSelect.value,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadFromLocalStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.employeeName) employeeNameInput.value = data.employeeName;
+          if (data.startDate) startDateInput.value = data.startDate;
+          if (data.shiftPattern) shiftPatternInput.value = data.shiftPattern;
+          if (data.duration) durationSelect.value = data.duration;
+
+          if (data.startDate && data.shiftPattern) {
+            generateRoster();
+          }
+          return;
+        } catch (e) {
+          console.error('Gagal memuat data tersimpan:', e);
+        }
+      }
+
+      // Default tanggal hari ini jika belum ada data tersimpan
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      startDateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+
+    function hideError() {
+      errorBox.classList.add('hidden');
+    }
+
+    function generateRoster() {
+      hideError();
+
+      const startDateVal = startDateInput.value.trim();
+      const patternRaw = shiftPatternInput.value.trim();
+      const employeeName = employeeNameInput.value.trim();
+      const durationMonths = parseInt(durationSelect.value, 10);
+
+      if (!startDateVal) {
+        showError('Silakan pilih Tanggal Mulai terlebih dahulu.');
+        startDateInput.focus();
+        return;
+      }
+
+      const patterns = patternRaw
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+
+      if (patterns.length === 0) {
+        showError('Pola Shift tidak boleh kosong. Contoh: Pagi, Siang, Malam, Libur');
+        shiftPatternInput.focus();
+        return;
+      }
+
+      saveToLocalStorage();
+
+      const startDate = parseLocalDate(startDateVal);
+      // Tanggal akhir: akhir bulan dari (bulan mulai + durationMonths - 1)
+      const endYear = startDate.getFullYear();
+      const endMonthIndex = startDate.getMonth() + durationMonths;
+      // Hari ke-0 dari bulan berikutnya otomatis menghitung jumlah hari akurat (termasuk kabisat)
+      const endDate = new Date(endYear, endMonthIndex, 0);
+
+      // Hitung seluruh hari dari startDate sampai endDate
+      const scheduleMap = new Map();
+      const shiftCounts = {};
+      let currentDate = new Date(startDate);
+      let dayIndex = 0;
+
+      while (currentDate <= endDate) {
+        const shiftName = patterns[dayIndex % patterns.length];
+        const key = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+        scheduleMap.set(key, shiftName);
+
+        shiftCounts[shiftName] = (shiftCounts[shiftName] || 0) + 1;
+
+        currentDate.setDate(currentDate.getDate() + 1);
+        dayIndex++;
+      }
+
+      // Update Header Output
+      outputTitle.textContent = employeeName
+        ? `Jadwal Shift: ${employeeName}`
+        : 'Jadwal Kerja Shift (Roster)';
+
+      const formattedStart = fullDateFormatter.format(startDate);
+      const formattedEnd = fullDateFormatter.format(endDate);
+      outputSubtitle.textContent = `Periode: ${formattedStart} – ${formattedEnd} (${dayIndex} Hari)`;
+
+      // Render Ringkasan Total per Shift
+      summaryStats.innerHTML = Object.entries(shiftCounts)
+        .map(([shift, count]) => {
+          const badgeClass = getShiftBadgeClass(shift);
+          return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${badgeClass}">
+            <span>${escapeHtml(shift)}</span>
+            <span class="bg-white/70 px-1.5 py-0.2 rounded text-[11px] font-bold">${count}</span>
+          </span>`;
+        })
+        .join('');
+
+      // Render Kalender Bulanan
+      calendarsContainer.innerHTML = '';
+
+      for (let m = 0; m < durationMonths; m++) {
+        const targetDate = new Date(startDate.getFullYear(), startDate.getMonth() + m, 1);
+        const year = targetDate.getFullYear();
+        const month = targetDate.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // Hari pertama dalam bulan (Konversi Minggu=0 menjadi 6 agar Senin=0)
+        const firstDayOfWeek = (new Date(year, month, 1).getDay() + 6) % 7;
+
+        const monthCard = document.createElement('div');
+        monthCard.className = 'month-card bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden';
+
+        let cellsHtml = '';
+
+        // Sel kosong sebelum tanggal 1 (hanya tampil di desktop 7 kolom agar rapi seperti kalender dinding)
+        for (let empty = 0; empty < firstDayOfWeek; empty++) {
+          cellsHtml += `<div class="hidden lg:block bg-slate-50/60 border border-slate-100 rounded-xl min-h-[84px]"></div>`;
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const cellDate = new Date(year, month, day);
+          const key = `${year}-${month}-${day}`;
+          const shift = scheduleMap.get(key);
+          const fullDateStr = fullDateFormatter.format(cellDate);
+          const shortDayStr = shortDayFormatter.format(cellDate);
+          const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
+
+          if (shift) {
+            const badgeClass = getShiftBadgeClass(shift);
+            cellsHtml += `
+              <div title="${escapeHtml(fullDateStr)} • Shift: ${escapeHtml(shift)}" class="day-cell group relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl border ${isWeekend ? 'bg-slate-50/70 border-slate-200/90' : 'bg-white border-slate-200/80'} hover:border-indigo-300 hover:shadow-sm transition min-h-[82px] sm:min-h-[88px]">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-sm sm:text-base font-extrabold ${isWeekend ? 'text-rose-600' : 'text-slate-800'}">${day}</span>
+                  <span class="text-[11px] font-semibold uppercase tracking-wide ${isWeekend ? 'text-rose-500' : 'text-slate-400'}">${shortDayStr}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="block w-full text-center px-2 py-1 rounded-lg text-xs font-bold border truncate ${badgeClass}">
+                    ${escapeHtml(shift)}
+                  </span>
+                </div>
+              </div>
+            `;
+          } else {
+            // Tanggal sebelum startDate di bulan pertama
+            cellsHtml += `
+              <div title="${escapeHtml(fullDateStr)}" class="day-cell flex flex-col justify-between p-2.5 sm:p-3 rounded-xl border border-slate-100 bg-slate-50/50 opacity-60 min-h-[82px] sm:min-h-[88px]">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-sm font-bold text-slate-400">${day}</span>
+                  <span class="text-[11px] font-medium uppercase text-slate-400">${shortDayStr}</span>
+                </div>
+                <div class="mt-2">
+                  <span class="block w-full text-center px-2 py-1 rounded-lg text-[11px] font-medium text-slate-400 bg-slate-100/70">
+                    -
+                  </span>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        const dayHeadersHtml = DAY_HEADERS.map((d, idx) => {
+          const isWeekendCol = idx >= 5;
+          return `<div class="text-center text-xs font-bold uppercase tracking-wider py-2 ${isWeekendCol ? 'text-rose-500' : 'text-slate-500'}">${d}</div>`;
+        }).join('');
+
+        monthCard.innerHTML = `
+          <div class="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 capitalize">${monthYearFormatter.format(targetDate)}</h3>
+            <span class="text-xs font-medium text-slate-500">${daysInMonth} Hari</span>
+          </div>
+          <div class="p-3 sm:p-4">
+            <div class="hidden lg:grid grid-cols-7 gap-2 mb-1.5 border-b border-slate-100 pb-1">
+              ${dayHeadersHtml}
+            </div>
+            <div class="calendar-grid grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              ${cellsHtml}
+            </div>
+          </div>
+        `;
+
+        calendarsContainer.appendChild(monthCard);
+      }
+
+      emptyState.classList.add('hidden');
+      outputWrapper.classList.remove('hidden');
+      btnPrintTop.classList.remove('hidden');
+      btnPrintTop.classList.add('inline-flex');
+      btnPrintSide.classList.remove('hidden');
+      btnPrintSide.classList.add('flex');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Event Listeners
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      generateRoster();
+    });
+
+    btnUsePreset.addEventListener('click', () => {
+      shiftPatternInput.value = 'Pagi, Pagi, Siang, Siang, Malam, Malam, Libur, Libur';
+      hideError();
+    });
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
+  </script>
+</body>
+</html>
