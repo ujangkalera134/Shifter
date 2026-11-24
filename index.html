@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generator Jadwal Kerja Shift (Roster Tim)</title>
+  <title>Generator Jadwal Shift 10-5 (Roster Tim)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -71,16 +71,16 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-  <!-- Top Bar -->
+  <!-- Header -->
   <header class="bg-white border-b border-slate-200 no-print sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-sm">
-          R
+          10/5
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">RosterShift Tim</h1>
-          <p class="text-xs text-slate-500 hidden sm:block">Generator Matriks Jadwal Shift & Regu</p>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">RosterShift 10-5</h1>
+          <p class="text-xs text-slate-500 hidden sm:block">Pola 10 Hari Masuk, 5 Hari Libur (Siklus 15 Hari)</p>
         </div>
       </div>
       <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer">
@@ -94,13 +94,20 @@
 
       <!-- Panel Input -->
       <aside class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 no-print lg:sticky lg:top-24">
-        <h2 class="text-base font-bold text-slate-900 mb-4">Pengaturan Jadwal Tim</h2>
+        <h2 class="text-base font-bold text-slate-900 mb-3">Pengaturan Jadwal 10-5</h2>
+
+        <div class="mb-4 p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-slate-700 space-y-1">
+          <p class="font-bold text-indigo-950">Aturan Siklus 15 Hari (10 Kerja + 5 Libur):</p>
+          <p>• Hari ke-1 setelah libur = <strong>Sore (S)</strong></p>
+          <p>• Hari ke-10 (sebelum libur) = <strong>Malam (M)</strong></p>
+          <p>• Hari ke-11 s/d ke-15 = <strong>Libur (L)</strong></p>
+        </div>
 
         <form id="rosterForm" class="space-y-4" novalidate>
           <!-- Tanggal Mulai -->
           <div>
             <label for="startDate" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Tanggal Mulai <span class="text-rose-500">*</span>
+              Tanggal Mulai Tabel <span class="text-rose-500">*</span>
             </label>
             <input
               type="date"
@@ -110,38 +117,41 @@
             />
           </div>
 
-          <!-- Daftar Karyawan / Regu -->
+          <!-- Pola 10 Hari Kerja -->
           <div>
-            <label for="employeeList" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Daftar Karyawan / Regu <span class="text-rose-500">*</span>
-            </label>
-            <textarea
-              id="employeeList"
-              rows="5"
-              required
-              placeholder="Gunakan tanda '&' untuk menggabungkan regu. Contoh:&#10;Kevin & Roni&#10;Mulyadi&#10;Ridho"
-              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            ></textarea>
-            <p class="text-[11px] text-slate-500 mt-1">Satu baris = satu karyawan atau satu regu gabungan (dengan tanda <code class="font-bold">&amp;</code>).</p>
-          </div>
-
-          <!-- Pola Shift -->
-          <div>
-            <label for="shiftPattern" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Pola Shift <span class="text-rose-500">*</span>
+            <label for="workPattern" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Pola 10 Hari Kerja <span class="text-rose-500">*</span>
             </label>
             <input
               type="text"
-              id="shiftPattern"
+              id="workPattern"
               required
-              value="S, M, S, M, L, L, L, L"
-              placeholder="S, M, S, M, L, L, L, L"
-              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              value="S, S, S, S, S, S, S, S, S, M"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
             />
-            <p class="text-[11px] text-slate-500 mt-1">Pisahkan dengan koma. Pola lurus berulang untuk semua regu.</p>
+            <p class="text-[11px] text-slate-500 mt-1">
+              10 nilai kerja (otomatis dipaksa hari ke-1 = <strong>S</strong> dan hari ke-10 = <strong>M</strong>), lalu diikuti <strong>5 hari L</strong>.
+            </p>
           </div>
 
-          <!-- Durasi Generate -->
+          <!-- Daftar Regu + Posisi Hari ke-1 s/d ke-15 pada Tanggal Mulai -->
+          <div>
+            <label for="memberConfigs" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Regu / Karyawan & Posisi Siklus (1–15) <span class="text-rose-500">*</span>
+            </label>
+            <textarea
+              id="memberConfigs"
+              rows="5"
+              required
+              placeholder="Nama Regu | Hari ke- (1..15)&#10;Kevin & Roni | 7&#10;Ridho | 2&#10;Mulyadi | 12"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            ></textarea>
+            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Format: <code class="font-bold">Nama | HariKe</code> (1–10 = kerja, 11–15 = libur ke-1 s/d ke-5). Pakai <code class="font-bold">&amp;</code> untuk gabung regu.
+            </p>
+          </div>
+
+          <!-- Durasi -->
           <div>
             <label for="duration" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
               Durasi Generate
@@ -156,10 +166,8 @@
             </select>
           </div>
 
-          <!-- Error Box -->
           <div id="errorBox" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-          <!-- Action Buttons -->
           <div class="pt-1 space-y-2.5">
             <button
               type="submit"
@@ -179,31 +187,28 @@
           </div>
         </form>
 
-        <!-- Legenda Badge -->
+        <!-- Legenda -->
         <div class="mt-6 pt-4 border-t border-slate-100">
-          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Keterangan Badge Shift</p>
+          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Badge Shift</p>
           <div class="flex flex-wrap gap-2 text-xs font-bold">
-            <span class="px-2.5 py-1 rounded-md bg-amber-300 text-slate-900">S = Siang</span>
+            <span class="px-2.5 py-1 rounded-md bg-amber-300 text-slate-950">S = Siang / Sore</span>
             <span class="px-2.5 py-1 rounded-md bg-indigo-900 text-white">M = Malam</span>
-            <span class="px-2.5 py-1 rounded-md bg-green-100 text-green-800">L = Libur</span>
-            <span class="px-2.5 py-1 rounded-md bg-slate-200 text-slate-800">Lainnya</span>
+            <span class="px-2.5 py-1 rounded-md bg-green-100 text-green-800">L = Libur (5 Hari)</span>
           </div>
         </div>
       </aside>
 
-      <!-- Panel Output Matriks -->
+      <!-- Panel Output -->
       <section class="lg:col-span-8 print-container">
         <div id="emptyState" class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center no-print">
           <p class="text-base font-bold text-slate-800">Belum Ada Jadwal Matriks</p>
-          <p class="text-sm text-slate-500 mt-1">Isi tanggal mulai, daftar karyawan/regu, dan pola shift, lalu klik <strong>Generate Jadwal Tim</strong>.</p>
+          <p class="text-sm text-slate-500 mt-1">Atur tanggal mulai, pola 10 hari kerja, dan posisi siklus tiap regu, lalu klik <strong>Generate Jadwal Tim</strong>.</p>
         </div>
 
         <div id="outputSection" class="hidden space-y-6">
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 id="matrixTitle" class="text-lg sm:text-xl font-extrabold text-slate-900">Matriks Jadwal Kerja Shift</h2>
-              <p id="matrixSubtitle" class="text-xs sm:text-sm text-slate-500 mt-0.5"></p>
-            </div>
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+            <h2 id="matrixTitle" class="text-lg sm:text-xl font-extrabold text-slate-900">Matriks Jadwal Shift 10-5</h2>
+            <p id="matrixSubtitle" class="text-xs sm:text-sm text-slate-500 mt-0.5"></p>
           </div>
 
           <div id="matricesContainer" class="space-y-6"></div>
@@ -214,12 +219,13 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'roster_shift_tim_v1';
+    const STORAGE_KEY = 'roster_shift_10_5_v2';
+    const CYCLE_LENGTH = 15; // 10 hari kerja + 5 hari libur
 
     const form = document.getElementById('rosterForm');
     const startDateInput = document.getElementById('startDate');
-    const employeeListInput = document.getElementById('employeeList');
-    const shiftPatternInput = document.getElementById('shiftPattern');
+    const workPatternInput = document.getElementById('workPattern');
+    const memberConfigsInput = document.getElementById('memberConfigs');
     const durationSelect = document.getElementById('duration');
     const errorBox = document.getElementById('errorBox');
     const emptyState = document.getElementById('emptyState');
@@ -250,45 +256,6 @@
       return div.innerHTML;
     }
 
-    // Parsing Grup: setiap baris menjadi satu entitas/regu (misal "Kevin & Roni" tetap satu baris & satu regu)
-    function parseGroups(rawText) {
-      return rawText
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0)
-        .map((line) => {
-          const members = line
-            .split('&')
-            .map((m) => m.trim())
-            .filter((m) => m.length > 0);
-          return {
-            displayName: members.join(' & '),
-            members,
-          };
-        });
-    }
-
-    function parsePattern(rawPattern) {
-      return rawPattern
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-    }
-
-    function getShiftBadgeStyle(shiftCode) {
-      const code = shiftCode.trim().toUpperCase();
-      if (code === 'S' || code === 'SIANG') {
-        return 'bg-amber-300 text-slate-950 border-amber-400';
-      }
-      if (code === 'M' || code === 'MALAM') {
-        return 'bg-indigo-900 text-white border-indigo-950';
-      }
-      if (code === 'L' || code === 'LIBUR') {
-        return 'bg-green-100 text-green-800 border-green-300';
-      }
-      return 'bg-slate-200 text-slate-800 border-slate-300';
-    }
-
     function showError(msg) {
       errorBox.textContent = msg;
       errorBox.classList.remove('hidden');
@@ -298,95 +265,153 @@
       errorBox.classList.add('hidden');
     }
 
+    // Membangun siklus 15 hari:
+    // Hari ke-1..10 (indeks 0..9): 10 hari kerja. Hari ke-1 = 'S', Hari ke-10 = 'M'.
+    // Hari ke-11..15 (indeks 10..14): 5 hari libur ('L').
+    function build15DayCycle(rawWorkPattern) {
+      const tokens = rawWorkPattern
+        .split(',')
+        .map((t) => t.trim().toUpperCase())
+        .filter((t) => t.length > 0);
+
+      const tenWorkDays = [];
+      for (let i = 0; i < 10; i++) {
+        tenWorkDays.push(tokens[i] || 'S');
+      }
+      tenWorkDays[0] = 'S';
+      tenWorkDays[9] = 'M';
+
+      return [...tenWorkDays, 'L', 'L', 'L', 'L', 'L'];
+    }
+
+    function parseMemberConfigs(rawText) {
+      const lines = rawText
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+
+      const result = [];
+      for (const line of lines) {
+        const parts = line.split('|');
+        const rawName = parts[0].trim();
+        const groupName = rawName
+          .split('&')
+          .map((n) => n.trim())
+          .filter(Boolean)
+          .join(' & ');
+
+        if (!groupName) continue;
+
+        let dayInCycle = 1;
+        if (parts[1] !== undefined && parts[1].trim() !== '') {
+          const parsedNum = parseInt(parts[1].trim(), 10);
+          if (Number.isNaN(parsedNum) || parsedNum < 1 || parsedNum > 15) {
+            return { error: `Posisi hari pada "${groupName}" harus berupa angka 1 sampai 15.` };
+          }
+          dayInCycle = parsedNum;
+        }
+
+        result.push({
+          displayName: groupName,
+          offsetIndex: dayInCycle - 1,
+          startDayInCycle: dayInCycle,
+        });
+      }
+
+      return { items: result };
+    }
+
+    function getBadgeClass(code) {
+      const c = code.trim().toUpperCase();
+      if (c === 'S') return 'bg-amber-300 text-slate-950 border-amber-400';
+      if (c === 'M') return 'bg-indigo-900 text-white border-indigo-950';
+      if (c === 'L') return 'bg-green-100 text-green-800 border-green-300';
+      return 'bg-slate-200 text-slate-800 border-slate-300';
+    }
+
     function saveState() {
-      const payload = {
-        startDate: startDateInput.value,
-        employeeList: employeeListInput.value,
-        shiftPattern: shiftPatternInput.value,
-        duration: durationSelect.value,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          startDate: startDateInput.value,
+          workPattern: workPatternInput.value,
+          memberConfigs: memberConfigsInput.value,
+          duration: durationSelect.value,
+        })
+      );
     }
 
     function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
         try {
-          const data = JSON.parse(raw);
+          const data = JSON.parse(saved);
           if (data.startDate) startDateInput.value = data.startDate;
-          if (typeof data.employeeList === 'string') employeeListInput.value = data.employeeList;
-          if (data.shiftPattern) shiftPatternInput.value = data.shiftPattern;
+          if (data.workPattern) workPatternInput.value = data.workPattern;
+          if (typeof data.memberConfigs === 'string') memberConfigsInput.value = data.memberConfigs;
           if (data.duration) durationSelect.value = data.duration;
 
-          if (data.startDate && data.employeeList && data.shiftPattern) {
+          if (data.startDate && data.memberConfigs) {
             generateSchedule();
           }
           return;
-        } catch (err) {
-          console.error('Gagal membaca localStorage:', err);
+        } catch (e) {
+          console.error(e);
         }
       }
 
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      startDateInput.value = `${yyyy}-${mm}-${dd}`;
+      startDateInput.value = '2026-11-30';
+      memberConfigsInput.value = 'Kevin & Roni | 7\nRidho | 2\nMulyadi | 12';
     }
 
     function generateSchedule() {
       hideError();
 
       const startDateVal = startDateInput.value.trim();
-      const groups = parseGroups(employeeListInput.value);
-      const pattern = parsePattern(shiftPatternInput.value);
-      const durationMonths = parseInt(durationSelect.value, 10);
-
       if (!startDateVal) {
-        showError('Tanggal Mulai wajib diisi.');
+        showError('Tanggal Mulai Tabel wajib diisi.');
         startDateInput.focus();
         return;
       }
 
-      if (groups.length === 0) {
-        showError('Daftar Karyawan / Regu tidak boleh kosong.');
-        employeeListInput.focus();
+      const parsedMembers = parseMemberConfigs(memberConfigsInput.value);
+      if (parsedMembers.error) {
+        showError(parsedMembers.error);
+        memberConfigsInput.focus();
         return;
       }
 
-      if (pattern.length === 0) {
-        showError('Pola Shift tidak boleh kosong.');
-        shiftPatternInput.focus();
+      if (!parsedMembers.items || parsedMembers.items.length === 0) {
+        showError('Daftar Regu / Karyawan tidak boleh kosong.');
+        memberConfigsInput.focus();
         return;
       }
 
       saveState();
 
+      const cycle15 = build15DayCycle(workPatternInput.value);
+      const durationMonths = parseInt(durationSelect.value, 10);
       const startDate = parseLocalDate(startDateVal);
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth();
-
-      // Tanggal akhir = hari terakhir pada bulan ke-(durationMonths - 1)
       const endDate = new Date(startYear, startMonth + durationMonths, 0);
 
-      // Hitung selisih hari penuh dari startDate ke tanggal mana pun
       const msPerDay = 24 * 60 * 60 * 1000;
       const startUtc = Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
       const endUtc = Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
 
-      // Pola lurus: semua regu menggunakan rumus indeksPola = totalHariBerjalan % panjangPola
-      function getShiftAtDate(targetDate) {
+      function getShiftForGroupAtDate(groupOffsetIndex, targetDate) {
         const targetUtc = Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
         if (targetUtc < startUtc || targetUtc > endUtc) {
           return null;
         }
-        const totalHariBerjalan = Math.floor((targetUtc - startUtc) / msPerDay);
-        const indeksPola = totalHariBerjalan % pattern.length;
-        return pattern[indeksPola];
+        const elapsedDays = Math.floor((targetUtc - startUtc) / msPerDay);
+        const cycleIdx = (groupOffsetIndex + elapsedDays) % CYCLE_LENGTH;
+        return cycle15[cycleIdx];
       }
 
-      matrixTitle.textContent = `Matriks Jadwal Shift (${groups.length} Regu / Entitas)`;
-      matrixSubtitle.textContent = `Pola Lurus: [${pattern.join(' - ')}] • Durasi: ${durationMonths} Bulan`;
+      matrixTitle.textContent = `Matriks Jadwal Shift 10-5 (${parsedMembers.items.length} Regu)`;
+      matrixSubtitle.textContent = `Siklus 15 Hari (10 Masuk + 5 Libur) • Durasi: ${durationMonths} Bulan`;
 
       matricesContainer.innerHTML = '';
 
@@ -396,59 +421,56 @@
         const month = monthDate.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        const dayColumns = [];
+        const dayCols = [];
         for (let d = 1; d <= daysInMonth; d++) {
-          const current = new Date(year, month, d);
-          const ddStr = String(d).padStart(2, '0');
-          const dayShort = shortDayFormatter.format(current).replace('.', '');
-          const isWeekend = current.getDay() === 0 || current.getDay() === 6;
-          dayColumns.push({
-            day: d,
-            dateObj: current,
-            label: `${ddStr} - ${dayShort}`,
+          const dt = new Date(year, month, d);
+          const dd = String(d).padStart(2, '0');
+          const dayShort = shortDayFormatter.format(dt).replace('.', '');
+          const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+          dayCols.push({
+            dateObj: dt,
+            label: `${dd} - ${dayShort}`,
             isWeekend,
           });
         }
 
-        // Header Kolom Tanggal
-        const headerCellsHtml = dayColumns
+        const thHtml = dayCols
           .map((col) => {
-            const weekendCls = col.isWeekend ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700';
-            return `<th class="px-2 py-2.5 text-center text-[11px] font-bold border-b border-r border-slate-200 whitespace-nowrap ${weekendCls}">${col.label}</th>`;
+            const cls = col.isWeekend ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700';
+            return `<th class="px-2 py-2.5 text-center text-[11px] font-bold border-b border-r border-slate-200 whitespace-nowrap ${cls}">${col.label}</th>`;
           })
           .join('');
 
-        // Baris per Karyawan / Regu (Pola lurus: semua baris memakai shift yang sama pada tanggal yang sama)
-        const bodyRowsHtml = groups
-          .map((group, rowIdx) => {
-            const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80';
-            const stickyBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+        const rowsHtml = parsedMembers.items
+          .map((grp, idx) => {
+            const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80';
+            const stickyBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
 
-            const cellsHtml = dayColumns
+            const tdHtml = dayCols
               .map((col) => {
-                const shiftVal = getShiftAtDate(col.dateObj);
-                if (!shiftVal) {
-                  return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80 text-slate-300 text-xs font-medium">-</td>`;
+                const shiftCode = getShiftForGroupAtDate(grp.offsetIndex, col.dateObj);
+                if (!shiftCode) {
+                  return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80 text-slate-300 text-xs">-</td>`;
                 }
-                const badgeCls = getShiftBadgeStyle(shiftVal);
+                const badgeCls = getBadgeClass(shiftCode);
                 return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80">
-                  <span class="inline-flex items-center justify-center min-w-[26px] px-1.5 py-0.5 rounded-md text-xs font-extrabold border ${badgeCls}">${escapeHtml(shiftVal)}</span>
+                  <span class="inline-flex items-center justify-center min-w-[26px] px-1.5 py-0.5 rounded-md text-xs font-extrabold border ${badgeCls}">${escapeHtml(shiftCode)}</span>
                 </td>`;
               })
               .join('');
 
             return `<tr class="${rowBg} hover:bg-indigo-50/40 transition">
               <td class="sticky-col-print sticky left-0 z-10 ${stickyBg} px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 border-b border-r border-slate-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(15,23,42,0.08)]">
-                ${escapeHtml(group.displayName)}
+                ${escapeHtml(grp.displayName)}
               </td>
-              ${cellsHtml}
+              ${tdHtml}
             </tr>`;
           })
           .join('');
 
-        const monthCard = document.createElement('div');
-        monthCard.className = 'month-block bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden';
-        monthCard.innerHTML = `
+        const card = document.createElement('div');
+        card.className = 'month-block bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden';
+        card.innerHTML = `
           <div class="px-4 sm:px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <h3 class="text-sm sm:text-base font-bold text-slate-900 capitalize">${monthYearFormatter.format(monthDate)}</h3>
             <span class="text-xs font-semibold text-slate-500">${daysInMonth} Hari</span>
@@ -460,17 +482,16 @@
                   <th class="sticky-col-print sticky left-0 z-20 bg-slate-100 px-3.5 py-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-r border-slate-200 whitespace-nowrap min-w-[160px] shadow-[2px_0_5px_-2px_rgba(15,23,42,0.08)]">
                     Karyawan / Regu
                   </th>
-                  ${headerCellsHtml}
+                  ${thHtml}
                 </tr>
               </thead>
               <tbody>
-                ${bodyRowsHtml}
+                ${rowsHtml}
               </tbody>
             </table>
           </div>
         `;
-
-        matricesContainer.appendChild(monthCard);
+        matricesContainer.appendChild(card);
       }
 
       emptyState.classList.add('hidden');
@@ -490,4 +511,3 @@
   </script>
 </body>
 </html>
-
