@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generator Jadwal Shift 10-5 (Roster Tim)</title>
+  <title>Generator Jadwal Shift 10-5 (Selang-Seling S/M)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,7 +80,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">RosterShift 10-5</h1>
-          <p class="text-xs text-slate-500 hidden sm:block">Pola 10 Hari Masuk, 5 Hari Libur (Siklus 15 Hari)</p>
+          <p class="text-xs text-slate-500 hidden sm:block">10 Hari Kerja (Selang-Seling S/M) + 5 Hari Libur</p>
         </div>
       </div>
       <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer">
@@ -94,13 +94,12 @@
 
       <!-- Panel Input -->
       <aside class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 no-print lg:sticky lg:top-24">
-        <h2 class="text-base font-bold text-slate-900 mb-3">Pengaturan Jadwal 10-5</h2>
+        <h2 class="text-base font-bold text-slate-900 mb-3">Pengaturan Jadwal</h2>
 
         <div class="mb-4 p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-slate-700 space-y-1">
-          <p class="font-bold text-indigo-950">Aturan Siklus 15 Hari (10 Kerja + 5 Libur):</p>
-          <p>• Hari ke-1 setelah libur = <strong>Sore (S)</strong></p>
-          <p>• Hari ke-10 (sebelum libur) = <strong>Malam (M)</strong></p>
-          <p>• Hari ke-11 s/d ke-15 = <strong>Libur (L)</strong></p>
+          <p class="font-bold text-indigo-950">Siklus 15 Hari (10 Kerja + 5 Libur):</p>
+          <p>• Hari ke-1 s/d ke-10: selang-seling <strong>S</strong>, <strong>M</strong>, <strong>S</strong>, <strong>M</strong>... (Hari 1 = <strong>S</strong>, Hari 10 = <strong>M</strong>)</p>
+          <p>• Hari ke-11 s/d ke-15: <strong>L</strong> (5 hari libur)</p>
         </div>
 
         <form id="rosterForm" class="space-y-4" novalidate>
@@ -117,23 +116,6 @@
             />
           </div>
 
-          <!-- Pola 10 Hari Kerja -->
-          <div>
-            <label for="workPattern" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Pola 10 Hari Kerja <span class="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="workPattern"
-              required
-              value="S, S, S, S, S, S, S, S, S, M"
-              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            />
-            <p class="text-[11px] text-slate-500 mt-1">
-              10 nilai kerja (otomatis dipaksa hari ke-1 = <strong>S</strong> dan hari ke-10 = <strong>M</strong>), lalu diikuti <strong>5 hari L</strong>.
-            </p>
-          </div>
-
           <!-- Daftar Regu + Posisi Hari ke-1 s/d ke-15 pada Tanggal Mulai -->
           <div>
             <label for="memberConfigs" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
@@ -147,7 +129,7 @@
               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
             ></textarea>
             <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-              Format: <code class="font-bold">Nama | HariKe</code> (1–10 = kerja, 11–15 = libur ke-1 s/d ke-5). Pakai <code class="font-bold">&amp;</code> untuk gabung regu.
+              Format: <code class="font-bold">Nama | HariKe</code> (1–10 = hari kerja ke-1..10; 11–15 = hari libur ke-1..5). Pakai <code class="font-bold">&amp;</code> untuk gabung regu.
             </p>
           </div>
 
@@ -191,9 +173,9 @@
         <div class="mt-6 pt-4 border-t border-slate-100">
           <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Badge Shift</p>
           <div class="flex flex-wrap gap-2 text-xs font-bold">
-            <span class="px-2.5 py-1 rounded-md bg-amber-300 text-slate-950">S = Siang / Sore</span>
+            <span class="px-2.5 py-1 rounded-md bg-amber-300 text-slate-950">S = Siang</span>
             <span class="px-2.5 py-1 rounded-md bg-indigo-900 text-white">M = Malam</span>
-            <span class="px-2.5 py-1 rounded-md bg-green-100 text-green-800">L = Libur (5 Hari)</span>
+            <span class="px-2.5 py-1 rounded-md bg-green-100 text-green-800">L = Libur</span>
           </div>
         </div>
       </aside>
@@ -202,7 +184,7 @@
       <section class="lg:col-span-8 print-container">
         <div id="emptyState" class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center no-print">
           <p class="text-base font-bold text-slate-800">Belum Ada Jadwal Matriks</p>
-          <p class="text-sm text-slate-500 mt-1">Atur tanggal mulai, pola 10 hari kerja, dan posisi siklus tiap regu, lalu klik <strong>Generate Jadwal Tim</strong>.</p>
+          <p class="text-sm text-slate-500 mt-1">Klik <strong>Generate Jadwal Tim</strong> untuk menampilkan matriks jadwal.</p>
         </div>
 
         <div id="outputSection" class="hidden space-y-6">
@@ -219,12 +201,16 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'roster_shift_10_5_v2';
+    const STORAGE_KEY = 'roster_shift_10_5_sm_v1';
     const CYCLE_LENGTH = 15; // 10 hari kerja + 5 hari libur
+
+    // Siklus 15 hari:
+    // Hari 1..10 (index 0..9): S, M, S, M, S, M, S, M, S, M (Hari 1 = S, Hari 10 = M)
+    // Hari 11..15 (index 10..14): L, L, L, L, L
+    const CYCLE_15 = ['S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'L', 'L', 'L', 'L', 'L'];
 
     const form = document.getElementById('rosterForm');
     const startDateInput = document.getElementById('startDate');
-    const workPatternInput = document.getElementById('workPattern');
     const memberConfigsInput = document.getElementById('memberConfigs');
     const durationSelect = document.getElementById('duration');
     const errorBox = document.getElementById('errorBox');
@@ -265,25 +251,6 @@
       errorBox.classList.add('hidden');
     }
 
-    // Membangun siklus 15 hari:
-    // Hari ke-1..10 (indeks 0..9): 10 hari kerja. Hari ke-1 = 'S', Hari ke-10 = 'M'.
-    // Hari ke-11..15 (indeks 10..14): 5 hari libur ('L').
-    function build15DayCycle(rawWorkPattern) {
-      const tokens = rawWorkPattern
-        .split(',')
-        .map((t) => t.trim().toUpperCase())
-        .filter((t) => t.length > 0);
-
-      const tenWorkDays = [];
-      for (let i = 0; i < 10; i++) {
-        tenWorkDays.push(tokens[i] || 'S');
-      }
-      tenWorkDays[0] = 'S';
-      tenWorkDays[9] = 'M';
-
-      return [...tenWorkDays, 'L', 'L', 'L', 'L', 'L'];
-    }
-
     function parseMemberConfigs(rawText) {
       const lines = rawText
         .split(/\r?\n/)
@@ -314,7 +281,6 @@
         result.push({
           displayName: groupName,
           offsetIndex: dayInCycle - 1,
-          startDayInCycle: dayInCycle,
         });
       }
 
@@ -322,10 +288,9 @@
     }
 
     function getBadgeClass(code) {
-      const c = code.trim().toUpperCase();
-      if (c === 'S') return 'bg-amber-300 text-slate-950 border-amber-400';
-      if (c === 'M') return 'bg-indigo-900 text-white border-indigo-950';
-      if (c === 'L') return 'bg-green-100 text-green-800 border-green-300';
+      if (code === 'S') return 'bg-amber-300 text-slate-950 border-amber-400';
+      if (code === 'M') return 'bg-indigo-900 text-white border-indigo-950';
+      if (code === 'L') return 'bg-green-100 text-green-800 border-green-300';
       return 'bg-slate-200 text-slate-800 border-slate-300';
     }
 
@@ -334,7 +299,6 @@
         STORAGE_KEY,
         JSON.stringify({
           startDate: startDateInput.value,
-          workPattern: workPatternInput.value,
           memberConfigs: memberConfigsInput.value,
           duration: durationSelect.value,
         })
@@ -347,7 +311,6 @@
         try {
           const data = JSON.parse(saved);
           if (data.startDate) startDateInput.value = data.startDate;
-          if (data.workPattern) workPatternInput.value = data.workPattern;
           if (typeof data.memberConfigs === 'string') memberConfigsInput.value = data.memberConfigs;
           if (data.duration) durationSelect.value = data.duration;
 
@@ -389,7 +352,6 @@
 
       saveState();
 
-      const cycle15 = build15DayCycle(workPatternInput.value);
       const durationMonths = parseInt(durationSelect.value, 10);
       const startDate = parseLocalDate(startDateVal);
       const startYear = startDate.getFullYear();
@@ -407,11 +369,11 @@
         }
         const elapsedDays = Math.floor((targetUtc - startUtc) / msPerDay);
         const cycleIdx = (groupOffsetIndex + elapsedDays) % CYCLE_LENGTH;
-        return cycle15[cycleIdx];
+        return CYCLE_15[cycleIdx];
       }
 
       matrixTitle.textContent = `Matriks Jadwal Shift 10-5 (${parsedMembers.items.length} Regu)`;
-      matrixSubtitle.textContent = `Siklus 15 Hari (10 Masuk + 5 Libur) • Durasi: ${durationMonths} Bulan`;
+      matrixSubtitle.textContent = `10 Hari Kerja (S/M Selang-Seling) + 5 Hari Libur (L) • Durasi: ${durationMonths} Bulan`;
 
       matricesContainer.innerHTML = '';
 
