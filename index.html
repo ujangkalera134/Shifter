@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Generator Jadwal Shift 10-5 (Roster Tim)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -73,7 +75,7 @@
 
   <!-- Header -->
   <header class="bg-white border-b border-slate-200 no-print sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-sm">
           10/5
@@ -83,9 +85,17 @@
           <p class="text-xs text-slate-500 hidden sm:block">10 Hari Kerja (S/M Selang-Seling) + 5 Hari Libur (L)</p>
         </div>
       </div>
-      <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer">
-        Cetak PDF
-      </button>
+      <div id="topActions" class="hidden items-center gap-2">
+        <button id="btnCsvTop" type="button" onclick="downloadCSV()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer">
+          Download CSV
+        </button>
+        <button id="btnPdfTop" type="button" onclick="downloadPDF()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer">
+          Download PDF
+        </button>
+        <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden sm:inline-flex px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer">
+          Cetak
+        </button>
+      </div>
     </div>
   </header>
 
@@ -167,7 +177,7 @@
 
           <div id="errorBox" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-          <div class="pt-1 space-y-2.5">
+          <div class="pt-1 space-y-2">
             <button
               type="submit"
               class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm shadow-indigo-600/20 transition cursor-pointer"
@@ -175,14 +185,23 @@
               Generate Jadwal Tim
             </button>
 
-            <button
-              id="btnPrintSide"
-              type="button"
-              onclick="window.print()"
-              class="hidden w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-semibold text-sm rounded-xl transition cursor-pointer"
-            >
-              Cetak PDF
-            </button>
+            <div id="sideActions" class="hidden grid-cols-2 gap-2">
+              <button
+                type="button"
+                onclick="downloadCSV()"
+                class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-xl transition cursor-pointer"
+              >
+                Download CSV
+              </button>
+              <button
+                id="btnPdfSide"
+                type="button"
+                onclick="downloadPDF()"
+                class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm rounded-xl transition cursor-pointer"
+              >
+                Download PDF
+              </button>
+            </div>
           </div>
         </form>
 
@@ -220,10 +239,9 @@
   <script>
     const STORAGE_KEY = 'roster_shift_10_5_v3';
     const CYCLE_LENGTH = 15;
-
-    // Hari ke-1..10: S, M, S, M, S, M, S, M, S, M (Hari 1 = S, Hari 10 = M)
-    // Hari ke-11..15: L, L, L, L, L (5 hari libur)
     const CYCLE_15 = ['S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'L', 'L', 'L', 'L', 'L'];
+
+    let latestExportData = null;
 
     const form = document.getElementById('rosterForm');
     const anchorDateInput = document.getElementById('anchorDate');
@@ -236,8 +254,8 @@
     const matrixTitle = document.getElementById('matrixTitle');
     const matrixSubtitle = document.getElementById('matrixSubtitle');
     const matricesContainer = document.getElementById('matricesContainer');
-    const btnPrintTop = document.getElementById('btnPrintTop');
-    const btnPrintSide = document.getElementById('btnPrintSide');
+    const topActions = document.getElementById('topActions');
+    const sideActions = document.getElementById('sideActions');
 
     const monthYearFormatter = new Intl.DateTimeFormat('id-ID', {
       month: 'long',
@@ -261,6 +279,14 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function escapeCsvCell(value) {
+      const str = String(value ?? '');
+      if (/[",\n\r]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
     }
 
     function showError(msg) {
@@ -301,7 +327,7 @@
 
         result.push({
           displayName: groupName,
-          anchorDayInCycle: dayInCycle, // 1..15 pada anchorDate
+          anchorDayInCycle: dayInCycle,
         });
       }
 
@@ -397,7 +423,6 @@
       const rangeStartUtc = toUtcMidnight(startDate);
       const rangeEndUtc = toUtcMidnight(endDate);
 
-      // Menghitung hari ke-berapa (1..15) dan kode shift (S/M/L) pada targetDate
       function getCycleInfoAtDate(anchorDayInCycle, targetDate) {
         const targetUtc = toUtcMidnight(targetDate);
         if (targetUtc < rangeStartUtc || targetUtc > rangeEndUtc) {
@@ -405,7 +430,6 @@
         }
         const diffDaysFromAnchor = Math.round((targetUtc - anchorUtc) / msPerDay);
         const zeroBasedAnchor = anchorDayInCycle - 1;
-        // Modulo aman untuk nilai negatif maupun positif
         const zeroBasedTarget = (((zeroBasedAnchor + diffDaysFromAnchor) % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH;
         const dayNumber = zeroBasedTarget + 1;
         const shiftCode = CYCLE_15[zeroBasedTarget];
@@ -420,12 +444,14 @@
       matrixSubtitle.textContent = `Patokan: ${anchorVal} • Mulai Tabel: ${startVal} • Durasi: ${durationMonths} Bulan`;
 
       matricesContainer.innerHTML = '';
+      const csvRows = [];
 
       for (let m = 0; m < durationMonths; m++) {
         const monthDate = new Date(startYear, startMonth + m, 1);
         const year = monthDate.getFullYear();
         const month = monthDate.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const monthLabel = monthYearFormatter.format(monthDate);
 
         const dayCols = [];
         for (let d = 1; d <= daysInMonth; d++) {
@@ -436,9 +462,14 @@
           dayCols.push({
             dateObj: dt,
             label: `${dd} - ${dayShort}`,
+            isoDate: `${year}-${String(month + 1).padStart(2, '0')}-${dd}`,
             isWeekend,
           });
         }
+
+        // Kumpulkan data CSV per bulan
+        csvRows.push([`Bulan: ${monthLabel}`]);
+        csvRows.push(['Karyawan / Regu', ...dayCols.map((c) => c.label)]);
 
         const thHtml = dayCols
           .map((col) => {
@@ -451,13 +482,16 @@
           .map((grp, idx) => {
             const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80';
             const stickyBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+            const csvRow = [grp.displayName];
 
             const tdHtml = dayCols
               .map((col) => {
                 const info = getCycleInfoAtDate(grp.anchorDayInCycle, col.dateObj);
                 if (!info) {
+                  csvRow.push('');
                   return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80 text-slate-300 text-xs">-</td>`;
                 }
+                csvRow.push(info.shiftCode);
                 const badgeCls = getBadgeClass(info.shiftCode);
                 const statusNote = info.dayNumber <= 10 ? `Kerja hari ke-${info.dayNumber}` : `Libur hari ke-${info.dayNumber - 10}`;
                 return `<td title="${escapeHtml(grp.displayName)} • ${escapeHtml(col.label)} • ${statusNote}" class="px-1.5 py-2 text-center border-b border-r border-slate-200/80">
@@ -465,6 +499,8 @@
                 </td>`;
               })
               .join('');
+
+            csvRows.push(csvRow);
 
             return `<tr class="${rowBg} hover:bg-indigo-50/40 transition">
               <td class="sticky-col-print sticky left-0 z-10 ${stickyBg} px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 border-b border-r border-slate-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(15,23,42,0.08)]">
@@ -475,11 +511,13 @@
           })
           .join('');
 
+        csvRows.push([]);
+
         const card = document.createElement('div');
         card.className = 'month-block bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden';
         card.innerHTML = `
           <div class="px-4 sm:px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <h3 class="text-sm sm:text-base font-bold text-slate-900 capitalize">${monthYearFormatter.format(monthDate)}</h3>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900 capitalize">${monthLabel}</h3>
             <span class="text-xs font-semibold text-slate-500">${daysInMonth} Hari</span>
           </div>
           <div class="table-scroll-print overflow-x-auto">
@@ -501,12 +539,92 @@
         matricesContainer.appendChild(card);
       }
 
+      latestExportData = {
+        startVal,
+        csvContent: '\uFEFF' + csvRows.map((r) => r.map(escapeCsvCell).join(',')).join('\r\n'),
+      };
+
       emptyState.classList.add('hidden');
       outputSection.classList.remove('hidden');
-      btnPrintTop.classList.remove('hidden');
-      btnPrintTop.classList.add('inline-flex');
-      btnPrintSide.classList.remove('hidden');
-      btnPrintSide.classList.add('block');
+      topActions.classList.remove('hidden');
+      topActions.classList.add('flex');
+      sideActions.classList.remove('hidden');
+      sideActions.classList.add('grid');
+    }
+
+    function downloadCSV() {
+      if (!latestExportData) return;
+      const blob = new Blob([latestExportData.csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `jadwal-shift-10-5-${latestExportData.startVal}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    async function downloadPDF() {
+      if (!window.html2canvas || !window.jspdf) {
+        window.print();
+        return;
+      }
+
+      const btnPdfSide = document.getElementById('btnPdfSide');
+      const originalText = btnPdfSide ? btnPdfSide.textContent : '';
+      if (btnPdfSide) btnPdfSide.textContent = 'Menyiapkan PDF...';
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4',
+        });
+
+        const cards = Array.from(matricesContainer.querySelectorAll('.month-block'));
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+        const printableWidth = pageWidth - margin * 2;
+
+        for (let i = 0; i < cards.length; i++) {
+          const card = cards[i];
+          const scrollBox = card.querySelector('.table-scroll-print');
+          const prevOverflow = scrollBox ? scrollBox.style.overflow : '';
+          if (scrollBox) scrollBox.style.overflow = 'visible';
+
+          const canvas = await html2canvas(card, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+          });
+
+          if (scrollBox) scrollBox.style.overflow = prevOverflow;
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgProps = pdf.getImageProperties(imgData);
+          let renderWidth = printableWidth;
+          let renderHeight = (imgProps.height * renderWidth) / imgProps.width;
+
+          if (renderHeight > pageHeight - margin * 2) {
+            renderHeight = pageHeight - margin * 2;
+            renderWidth = (imgProps.width * renderHeight) / imgProps.height;
+          }
+
+          if (i > 0) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', margin, margin, renderWidth, renderHeight);
+        }
+
+        const fileDate = latestExportData?.startVal || 'jadwal';
+        pdf.save(`jadwal-shift-10-5-${fileDate}.pdf`);
+      } catch (err) {
+        console.error('Gagal membuat PDF, fallback ke print:', err);
+        window.print();
+      } finally {
+        if (btnPdfSide) btnPdfSide.textContent = originalText || 'Download PDF';
+      }
     }
 
     form.addEventListener('submit', (e) => {
