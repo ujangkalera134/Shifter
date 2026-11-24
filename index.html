@@ -93,7 +93,7 @@
           Download PDF
         </button>
         <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden sm:inline-flex px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer">
-          Cetak
+          Cetak PDF
         </button>
       </div>
     </div>
@@ -209,9 +209,9 @@
         <div class="mt-6 pt-4 border-t border-slate-100">
           <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Badge Shift</p>
           <div class="flex flex-wrap gap-2 text-xs font-bold">
-            <span class="px-2.5 py-1 rounded-md bg-amber-300 text-slate-950">S = Siang</span>
-            <span class="px-2.5 py-1 rounded-md bg-indigo-900 text-white">M = Malam</span>
-            <span class="px-2.5 py-1 rounded-md bg-green-100 text-green-800">L = Libur</span>
+            <span class="px-2.5 py-1 rounded-md bg-yellow-300 text-slate-950">S = Siang</span>
+            <span class="px-2.5 py-1 rounded-md bg-sky-200 text-sky-950">M = Malam</span>
+            <span class="px-2.5 py-1 rounded-md bg-red-500 text-white">L = Libur</span>
           </div>
         </div>
       </aside>
@@ -239,6 +239,9 @@
   <script>
     const STORAGE_KEY = 'roster_shift_10_5_v3';
     const CYCLE_LENGTH = 15;
+
+    // Hari ke-1..10: S, M, S, M, S, M, S, M, S, M (Hari 1 = S, Hari 10 = M)
+    // Hari ke-11..15: L, L, L, L, L (5 hari libur)
     const CYCLE_15 = ['S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'L', 'L', 'L', 'L', 'L'];
 
     let latestExportData = null;
@@ -327,17 +330,18 @@
 
         result.push({
           displayName: groupName,
-          anchorDayInCycle: dayInCycle,
+          anchorDayInCycle: dayInCycle, // 1..15 pada anchorDate
         });
       }
 
       return { items: result };
     }
 
+    // Siang = kuning, Malam = biru muda, Libur = merah
     function getBadgeClass(code) {
-      if (code === 'S') return 'bg-amber-300 text-slate-950 border-amber-400';
-      if (code === 'M') return 'bg-indigo-900 text-white border-indigo-950';
-      if (code === 'L') return 'bg-green-100 text-green-800 border-green-300';
+      if (code === 'S') return 'bg-yellow-300 text-slate-950 border-yellow-400';
+      if (code === 'M') return 'bg-sky-200 text-sky-950 border-sky-300';
+      if (code === 'L') return 'bg-red-500 text-white border-red-600';
       return 'bg-slate-200 text-slate-800 border-slate-300';
     }
 
@@ -458,23 +462,19 @@
           const dt = new Date(year, month, d);
           const dd = String(d).padStart(2, '0');
           const dayShort = shortDayFormatter.format(dt).replace('.', '');
-          const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
           dayCols.push({
             dateObj: dt,
             label: `${dd} - ${dayShort}`,
-            isoDate: `${year}-${String(month + 1).padStart(2, '0')}-${dd}`,
-            isWeekend,
           });
         }
 
-        // Kumpulkan data CSV per bulan
         csvRows.push([`Bulan: ${monthLabel}`]);
         csvRows.push(['Karyawan / Regu', ...dayCols.map((c) => c.label)]);
 
+        // Semua header tanggal hitam semua (Sabtu/Minggu tidak merah)
         const thHtml = dayCols
           .map((col) => {
-            const cls = col.isWeekend ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700';
-            return `<th class="px-2 py-2.5 text-center text-[11px] font-bold border-b border-r border-slate-200 whitespace-nowrap ${cls}">${col.label}</th>`;
+            return `<th class="px-2 py-2.5 text-center text-[11px] font-bold border-b border-r border-slate-200 whitespace-nowrap bg-slate-100 text-slate-950">${col.label}</th>`;
           })
           .join('');
 
@@ -524,7 +524,7 @@
             <table class="matrix-table w-full border-collapse text-left">
               <thead>
                 <tr>
-                  <th class="sticky-col-print sticky left-0 z-20 bg-slate-100 px-3.5 py-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-r border-slate-200 whitespace-nowrap min-w-[160px] shadow-[2px_0_5px_-2px_rgba(15,23,42,0.08)]">
+                  <th class="sticky-col-print sticky left-0 z-20 bg-slate-100 px-3.5 py-2.5 text-xs font-extrabold uppercase tracking-wider text-slate-950 border-b border-r border-slate-200 whitespace-nowrap min-w-[160px] shadow-[2px_0_5px_-2px_rgba(15,23,42,0.08)]">
                     Karyawan / Regu
                   </th>
                   ${thHtml}
@@ -575,6 +575,16 @@
       const originalText = btnPdfSide ? btnPdfSide.textContent : '';
       if (btnPdfSide) btnPdfSide.textContent = 'Menyiapkan PDF...';
 
+      // Render klon penuh di luar layar dengan lebar penuh tabel (bukan container sempit yang terpotong scroll)
+      const exportStage = document.createElement('div');
+      exportStage.style.position = 'fixed';
+      exportStage.style.left = '-99999px';
+      exportStage.style.top = '0';
+      exportStage.style.background = '#ffffff';
+      exportStage.style.padding = '16px';
+      exportStage.style.zIndex = '-1';
+      document.body.appendChild(exportStage);
+
       try {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
@@ -587,29 +597,53 @@
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         const margin = 8;
-        const printableWidth = pageWidth - margin * 2;
+        const maxWidth = pageWidth - margin * 2;
+        const maxHeight = pageHeight - margin * 2;
 
         for (let i = 0; i < cards.length; i++) {
-          const card = cards[i];
-          const scrollBox = card.querySelector('.table-scroll-print');
-          const prevOverflow = scrollBox ? scrollBox.style.overflow : '';
-          if (scrollBox) scrollBox.style.overflow = 'visible';
+          const cloneCard = cards[i].cloneNode(true);
+          const scrollBox = cloneCard.querySelector('.table-scroll-print');
+          const tableEl = cloneCard.querySelector('.matrix-table');
 
-          const canvas = await html2canvas(card, {
+          // Lepas sticky dan paksa lebar tabel penuh sesuai seluruh kolom tanggal
+          cloneCard.querySelectorAll('.sticky, .sticky-col-print').forEach((el) => {
+            el.style.position = 'static';
+            el.style.left = 'auto';
+            el.style.boxShadow = 'none';
+          });
+
+          if (scrollBox) {
+            scrollBox.style.overflow = 'visible';
+            scrollBox.style.width = 'max-content';
+          }
+          if (tableEl) {
+            tableEl.style.width = 'max-content';
+            tableEl.style.tableLayout = 'auto';
+          }
+
+          exportStage.innerHTML = '';
+          exportStage.appendChild(cloneCard);
+
+          const fullWidth = Math.max(cloneCard.scrollWidth, tableEl ? tableEl.scrollWidth : 0, 900);
+          exportStage.style.width = `${fullWidth + 32}px`;
+
+          const canvas = await html2canvas(cloneCard, {
             scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
+            width: cloneCard.scrollWidth,
+            height: cloneCard.scrollHeight,
+            windowWidth: fullWidth + 64,
           });
-
-          if (scrollBox) scrollBox.style.overflow = prevOverflow;
 
           const imgData = canvas.toDataURL('image/png');
           const imgProps = pdf.getImageProperties(imgData);
-          let renderWidth = printableWidth;
+
+          let renderWidth = maxWidth;
           let renderHeight = (imgProps.height * renderWidth) / imgProps.width;
 
-          if (renderHeight > pageHeight - margin * 2) {
-            renderHeight = pageHeight - margin * 2;
+          if (renderHeight > maxHeight) {
+            renderHeight = maxHeight;
             renderWidth = (imgProps.width * renderHeight) / imgProps.height;
           }
 
@@ -620,9 +654,10 @@
         const fileDate = latestExportData?.startVal || 'jadwal';
         pdf.save(`jadwal-shift-10-5-${fileDate}.pdf`);
       } catch (err) {
-        console.error('Gagal membuat PDF, fallback ke print:', err);
+        console.error('Gagal membuat PDF:', err);
         window.print();
       } finally {
+        exportStage.remove();
         if (btnPdfSide) btnPdfSide.textContent = originalText || 'Download PDF';
       }
     }
