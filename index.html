@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generator Jadwal Shift 10-5 (Selang-Seling S/M)</title>
+  <title>Generator Jadwal Shift 10-5 (Roster Tim)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,7 +80,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">RosterShift 10-5</h1>
-          <p class="text-xs text-slate-500 hidden sm:block">10 Hari Kerja (Selang-Seling S/M) + 5 Hari Libur</p>
+          <p class="text-xs text-slate-500 hidden sm:block">10 Hari Kerja (S/M Selang-Seling) + 5 Hari Libur (L)</p>
         </div>
       </div>
       <button id="btnPrintTop" type="button" onclick="window.print()" class="hidden items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition cursor-pointer">
@@ -97,13 +97,28 @@
         <h2 class="text-base font-bold text-slate-900 mb-3">Pengaturan Jadwal</h2>
 
         <div class="mb-4 p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-slate-700 space-y-1">
-          <p class="font-bold text-indigo-950">Siklus 15 Hari (10 Kerja + 5 Libur):</p>
-          <p>• Hari ke-1 s/d ke-10: selang-seling <strong>S</strong>, <strong>M</strong>, <strong>S</strong>, <strong>M</strong>... (Hari 1 = <strong>S</strong>, Hari 10 = <strong>M</strong>)</p>
-          <p>• Hari ke-11 s/d ke-15: <strong>L</strong> (5 hari libur)</p>
+          <p class="font-bold text-indigo-950">Aturan Siklus 15 Hari (10 Kerja + 5 Libur):</p>
+          <p>• Hari ke-1 s/d ke-10: selang-seling <strong>S, M, S, M, S, M, S, M, S, M</strong></p>
+          <p>• Hari ke-11 s/d ke-15: <strong>L, L, L, L, L</strong> (5 hari libur)</p>
+          <p>• Setelah hari ke-15, kembali ke hari ke-1 (<strong>S</strong>)</p>
         </div>
 
         <form id="rosterForm" class="space-y-4" novalidate>
-          <!-- Tanggal Mulai -->
+          <!-- Tanggal Patokan Siklus -->
+          <div>
+            <label for="anchorDate" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Tanggal Patokan Posisi <span class="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              id="anchorDate"
+              required
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+            <p class="text-[11px] text-slate-500 mt-1">Tanggal acuan angka posisi di bawah (default: 30 Nov 2026).</p>
+          </div>
+
+          <!-- Tanggal Mulai Tampil Tabel -->
           <div>
             <label for="startDate" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
               Tanggal Mulai Tabel <span class="text-rose-500">*</span>
@@ -114,12 +129,13 @@
               required
               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
             />
+            <p class="text-[11px] text-slate-500 mt-1">Bisa 1 Des 2026 atau 30 Nov 2026; perhitungan tetap mengacu ke Tanggal Patokan.</p>
           </div>
 
-          <!-- Daftar Regu + Posisi Hari ke-1 s/d ke-15 pada Tanggal Mulai -->
+          <!-- Daftar Regu + Posisi pada Tanggal Patokan -->
           <div>
             <label for="memberConfigs" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Regu / Karyawan & Posisi Siklus (1–15) <span class="text-rose-500">*</span>
+              Regu / Karyawan & Hari Siklus (1–15) <span class="text-rose-500">*</span>
             </label>
             <textarea
               id="memberConfigs"
@@ -129,7 +145,8 @@
               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
             ></textarea>
             <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-              Format: <code class="font-bold">Nama | HariKe</code> (1–10 = hari kerja ke-1..10; 11–15 = hari libur ke-1..5). Pakai <code class="font-bold">&amp;</code> untuk gabung regu.
+              1–10 = hari kerja ke-1..10 (1=S, 2=M, ..., 7=S, 8=M, 9=S, 10=M).<br />
+              11–15 = hari libur ke-1..5 (11=L pertama, 12=L kedua, dst). Pakai <code class="font-bold">&amp;</code> untuk gabung regu.
             </p>
           </div>
 
@@ -201,15 +218,15 @@
   </main>
 
   <script>
-    const STORAGE_KEY = 'roster_shift_10_5_sm_v1';
-    const CYCLE_LENGTH = 15; // 10 hari kerja + 5 hari libur
+    const STORAGE_KEY = 'roster_shift_10_5_v3';
+    const CYCLE_LENGTH = 15;
 
-    // Siklus 15 hari:
-    // Hari 1..10 (index 0..9): S, M, S, M, S, M, S, M, S, M (Hari 1 = S, Hari 10 = M)
-    // Hari 11..15 (index 10..14): L, L, L, L, L
+    // Hari ke-1..10: S, M, S, M, S, M, S, M, S, M (Hari 1 = S, Hari 10 = M)
+    // Hari ke-11..15: L, L, L, L, L (5 hari libur)
     const CYCLE_15 = ['S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'S', 'M', 'L', 'L', 'L', 'L', 'L'];
 
     const form = document.getElementById('rosterForm');
+    const anchorDateInput = document.getElementById('anchorDate');
     const startDateInput = document.getElementById('startDate');
     const memberConfigsInput = document.getElementById('memberConfigs');
     const durationSelect = document.getElementById('duration');
@@ -234,6 +251,10 @@
     function parseLocalDate(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
       return new Date(y, m - 1, d);
+    }
+
+    function toUtcMidnight(dateObj) {
+      return Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
     }
 
     function escapeHtml(text) {
@@ -280,7 +301,7 @@
 
         result.push({
           displayName: groupName,
-          offsetIndex: dayInCycle - 1,
+          anchorDayInCycle: dayInCycle, // 1..15 pada anchorDate
         });
       }
 
@@ -298,6 +319,7 @@
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          anchorDate: anchorDateInput.value,
           startDate: startDateInput.value,
           memberConfigs: memberConfigsInput.value,
           duration: durationSelect.value,
@@ -310,11 +332,12 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
+          if (data.anchorDate) anchorDateInput.value = data.anchorDate;
           if (data.startDate) startDateInput.value = data.startDate;
           if (typeof data.memberConfigs === 'string') memberConfigsInput.value = data.memberConfigs;
           if (data.duration) durationSelect.value = data.duration;
 
-          if (data.startDate && data.memberConfigs) {
+          if (data.anchorDate && data.startDate && data.memberConfigs) {
             generateSchedule();
           }
           return;
@@ -323,15 +346,24 @@
         }
       }
 
-      startDateInput.value = '2026-11-30';
+      anchorDateInput.value = '2026-11-30';
+      startDateInput.value = '2026-12-01';
       memberConfigsInput.value = 'Kevin & Roni | 7\nRidho | 2\nMulyadi | 12';
     }
 
     function generateSchedule() {
       hideError();
 
-      const startDateVal = startDateInput.value.trim();
-      if (!startDateVal) {
+      const anchorVal = anchorDateInput.value.trim();
+      const startVal = startDateInput.value.trim();
+
+      if (!anchorVal) {
+        showError('Tanggal Patokan Posisi wajib diisi.');
+        anchorDateInput.focus();
+        return;
+      }
+
+      if (!startVal) {
         showError('Tanggal Mulai Tabel wajib diisi.');
         startDateInput.focus();
         return;
@@ -352,28 +384,40 @@
 
       saveState();
 
+      const anchorDate = parseLocalDate(anchorVal);
+      const startDate = parseLocalDate(startVal);
       const durationMonths = parseInt(durationSelect.value, 10);
-      const startDate = parseLocalDate(startDateVal);
+
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth();
       const endDate = new Date(startYear, startMonth + durationMonths, 0);
 
       const msPerDay = 24 * 60 * 60 * 1000;
-      const startUtc = Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const endUtc = Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const anchorUtc = toUtcMidnight(anchorDate);
+      const rangeStartUtc = toUtcMidnight(startDate);
+      const rangeEndUtc = toUtcMidnight(endDate);
 
-      function getShiftForGroupAtDate(groupOffsetIndex, targetDate) {
-        const targetUtc = Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-        if (targetUtc < startUtc || targetUtc > endUtc) {
+      // Menghitung hari ke-berapa (1..15) dan kode shift (S/M/L) pada targetDate
+      function getCycleInfoAtDate(anchorDayInCycle, targetDate) {
+        const targetUtc = toUtcMidnight(targetDate);
+        if (targetUtc < rangeStartUtc || targetUtc > rangeEndUtc) {
           return null;
         }
-        const elapsedDays = Math.floor((targetUtc - startUtc) / msPerDay);
-        const cycleIdx = (groupOffsetIndex + elapsedDays) % CYCLE_LENGTH;
-        return CYCLE_15[cycleIdx];
+        const diffDaysFromAnchor = Math.round((targetUtc - anchorUtc) / msPerDay);
+        const zeroBasedAnchor = anchorDayInCycle - 1;
+        // Modulo aman untuk nilai negatif maupun positif
+        const zeroBasedTarget = (((zeroBasedAnchor + diffDaysFromAnchor) % CYCLE_LENGTH) + CYCLE_LENGTH) % CYCLE_LENGTH;
+        const dayNumber = zeroBasedTarget + 1;
+        const shiftCode = CYCLE_15[zeroBasedTarget];
+
+        return {
+          dayNumber,
+          shiftCode,
+        };
       }
 
       matrixTitle.textContent = `Matriks Jadwal Shift 10-5 (${parsedMembers.items.length} Regu)`;
-      matrixSubtitle.textContent = `10 Hari Kerja (S/M Selang-Seling) + 5 Hari Libur (L) • Durasi: ${durationMonths} Bulan`;
+      matrixSubtitle.textContent = `Patokan: ${anchorVal} • Mulai Tabel: ${startVal} • Durasi: ${durationMonths} Bulan`;
 
       matricesContainer.innerHTML = '';
 
@@ -410,13 +454,14 @@
 
             const tdHtml = dayCols
               .map((col) => {
-                const shiftCode = getShiftForGroupAtDate(grp.offsetIndex, col.dateObj);
-                if (!shiftCode) {
+                const info = getCycleInfoAtDate(grp.anchorDayInCycle, col.dateObj);
+                if (!info) {
                   return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80 text-slate-300 text-xs">-</td>`;
                 }
-                const badgeCls = getBadgeClass(shiftCode);
-                return `<td class="px-1.5 py-2 text-center border-b border-r border-slate-200/80">
-                  <span class="inline-flex items-center justify-center min-w-[26px] px-1.5 py-0.5 rounded-md text-xs font-extrabold border ${badgeCls}">${escapeHtml(shiftCode)}</span>
+                const badgeCls = getBadgeClass(info.shiftCode);
+                const statusNote = info.dayNumber <= 10 ? `Kerja hari ke-${info.dayNumber}` : `Libur hari ke-${info.dayNumber - 10}`;
+                return `<td title="${escapeHtml(grp.displayName)} • ${escapeHtml(col.label)} • ${statusNote}" class="px-1.5 py-2 text-center border-b border-r border-slate-200/80">
+                  <span class="inline-flex items-center justify-center min-w-[26px] px-1.5 py-0.5 rounded-md text-xs font-extrabold border ${badgeCls}">${escapeHtml(info.shiftCode)}</span>
                 </td>`;
               })
               .join('');
